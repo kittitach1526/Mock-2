@@ -1,231 +1,160 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function OEEDashboard() {
-  // 1. State สำหรับเวลาปัจจุบัน
-  const [currentTime, setCurrentTime] = useState(new Date());
-  
-  // 2. State สำหรับข้อมูล Metrics (ในอนาคตดึงจาก MongoDB)
-  const [metrics, setMetrics] = useState({
-    oee: 82.4,
-    availability: 91.2,
-    performance: 88.5,
-    quality: 99.1,
-    status: 'Running'
-  });
+  const [mounted, setMounted] = useState(false);
 
-  // Effect สำหรับอัปเดตเวลาทุกวินาที
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
+    setMounted(true);
   }, []);
 
-  // ฟังก์ชันจัดฟอร์แมตเวลา HH:mm:ss
-  const timeString = currentTime.toLocaleTimeString('en-US', { 
-    hour12: false, 
-    hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit'
-  });
-
-  // ฟังก์ชันคำนวณกะการทำงาน (Shift)
-  const getShift = () => {
-    const hour = currentTime.getHours();
-    if (hour >= 8 && hour < 16) return "Morning Shift (A)";
-    if (hour >= 16 && hour < 24) return "Evening Shift (B)";
-    return "Night Shift (C)";
-  };
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-blue-500 font-black animate-pulse uppercase tracking-[0.5em]">System Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 font-sans relative overflow-hidden">
+    // ลบ Sidebar (aside) ออกจากที่นี่ เพราะมีอยู่ใน layout.tsx แล้ว
+    // ปรับโครงสร้างหลักให้แสดงผลภายใน Content Area ของ Layout
+    <div className="relative z-10 p-8 max-w-[1600px] mx-auto">
       
-      {/* Background Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[0%] right-[-5%] w-[40%] h-[40%] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
+      {/* Header Section */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 border-b border-slate-800/50 pb-8">
+        <div>
+          <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-2">
+            <span className="w-8 h-[1px] bg-blue-600"></span>
+            PRODUCTION ENGINE
+          </div>
+          <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">
+            ZEWELL <span className="text-blue-600">OEE MONITOR</span>
+          </h1>
+        </div>
 
-      {/* Sidebar Navigation */}
-      <aside className="fixed left-0 top-0 bottom-0 w-20 flex flex-col items-center py-8 bg-slate-900/40 backdrop-blur-xl border-r border-slate-800/50 z-50">
-        <div className="mb-12">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.5)] cursor-pointer">
-            <span className="text-white font-black text-xs">SN</span>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 bg-slate-900/40 px-5 py-2.5 rounded-2xl border border-slate-800 shadow-lg shadow-black/20">
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </div>
+            <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em]">Live Stream</span>
           </div>
         </div>
-        <nav className="flex flex-col gap-8">
-          <NavIcon icon="dashboard" active />
-          <NavIcon icon="analytics" />
-          <NavIcon icon="history" />
-          <NavIcon icon="settings" />
-        </nav>
-      </aside>
+      </header>
 
-      {/* Main Content Area */}
-      <main className="ml-20 p-8 relative z-10">
+      {/* Metric Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <MetricCard title="Overall OEE" value={82.4} unit="%" color="blue" glow />
+        <MetricCard title="Availability" value={91.2} unit="%" color="indigo" />
+        <MetricCard title="Performance" value={88.5} unit="%" color="cyan" />
+        <MetricCard title="Quality Rate" value={99.1} unit="%" color="emerald" />
+      </div>
+
+      {/* Main Analytics Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
         
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
-          <div>
-            <div className="text-blue-500 text-xs font-bold uppercase tracking-[0.2em] mb-2">System Overview</div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">OEE Real-time Monitor</h1>
+        {/* Output Flowrate (Left Large Card) */}
+        <div className="lg:col-span-2 bg-slate-900/30 backdrop-blur-md border border-slate-800/50 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-700">
+              <span className="material-symbols-outlined text-[160px]">insights</span>
           </div>
-
-          {/* Time & Shift Status Bar */}
-          <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-2xl border border-slate-800/50 shadow-lg backdrop-blur-md">
-            <div className="px-4 py-1 text-right">
-              <div className="text-[10px] text-blue-400 uppercase font-black tracking-widest">Live Clock</div>
-              <div className="text-xl font-mono font-bold text-white mt-1 leading-none">
-                {timeString}
-              </div>
-            </div>
-            
-            <div className="h-10 w-[1px] bg-slate-800" />
-            
-            <div className="px-4 py-1">
-              <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Current Shift</div>
-              <div className="text-sm font-medium text-slate-200 mt-1">{getShift()}</div>
-            </div>
-            
-            <div className="h-10 w-[1px] bg-slate-800" />
-            
-            <div className="px-4 py-1 flex items-center gap-3">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-              </span>
-              <span className="text-sm font-black text-green-500 uppercase tracking-widest hidden lg:block">Online</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Top Stats - Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <MetricCard title="Overall OEE" value={metrics.oee} unit="%" color="blue" glow />
-          <MetricCard title="Availability" value={metrics.availability} unit="%" color="indigo" />
-          <MetricCard title="Performance" value={metrics.performance} unit="%" color="cyan" />
-          <MetricCard title="Quality Rate" value={metrics.quality} unit="%" color="emerald" />
-        </div>
-
-        {/* Charts & Table Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Main Chart Card */}
-          <div className="lg:col-span-2 bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-3xl p-8 shadow-xl">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                Production Output 
-                <span className="text-slate-500 font-normal text-sm">(Hourly)</span>
-              </h3>
-              <select className="bg-slate-800 border-none text-[10px] font-black uppercase tracking-widest rounded-lg px-3 py-2 outline-none text-blue-400 cursor-pointer hover:bg-slate-700 transition-colors">
-                <option>Today</option>
-                <option>Yesterday</option>
-              </select>
+          <div className="flex justify-between items-center mb-12 relative z-10">
+            <h3 className="text-lg font-black text-white italic tracking-widest flex items-center gap-3 uppercase">
+              <span className="w-2 h-6 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.5)]"></span>
+              Output Flowrate
+            </h3>
+            <div className="flex gap-2">
+               <button className="px-5 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-600/20 active:scale-95 transition-transform">Daily View</button>
+               <button className="px-5 py-2 bg-slate-800 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-700 transition-colors border border-slate-700 active:scale-95">Log History</button>
             </div>
-            
-            {/* Simple Bar Chart Visualization */}
-            <div className="h-64 flex items-end gap-3 px-2">
-              {[45, 52, 48, 70, 65, 82, 75, 90, 85, 60, 72, 88].map((h, i) => (
-                <div key={i} className="flex-1 group relative">
-                  <div 
-                    className="w-full bg-gradient-to-t from-blue-600/20 to-blue-500/60 rounded-t-lg transition-all duration-700 ease-out group-hover:to-blue-400 cursor-pointer" 
-                    style={{ height: `${h}%` }}
-                  >
-                    <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] py-1.5 px-2 rounded-lg font-bold transition-all z-20 shadow-lg">
-                      {h}u
-                    </div>
-                  </div>
+          </div>
+          
+          <div className="h-72 flex items-end gap-3 px-2 relative z-10">
+            {[45, 52, 48, 70, 65, 82, 75, 90, 85, 60, 72, 88].map((h, i) => (
+              <div key={i} className="flex-1 group/bar relative">
+                <div 
+                  className="w-full bg-gradient-to-t from-blue-600/5 via-blue-500/30 to-blue-400/60 rounded-t-lg transition-all duration-500 ease-out group-hover/bar:from-blue-600/20 group-hover/bar:to-blue-300 group-hover/bar:shadow-[0_0_25px_rgba(59,130,246,0.4)] cursor-pointer" 
+                  style={{ height: `${h}%` }}
+                />
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-700 font-mono tracking-tighter">
+                  {i+8}H
                 </div>
-              ))}
-            </div>
-            
-            <div className="flex justify-between mt-6 text-[10px] text-slate-600 font-black uppercase tracking-[0.3em] px-2">
-              <span>08:00</span>
-              <span>12:00</span>
-              <span>16:00</span>
-              <span>20:00</span>
-            </div>
+              </div>
+            ))}
           </div>
-
-          {/* Downtime Breakdown Card */}
-          <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-3xl p-8 shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-8 tracking-tight">Downtime Reasons</h3>
-            <div className="space-y-7">
-              <DowntimeRow label="Mechanical Failure" time="42m" percent={60} color="bg-red-500" />
-              <DowntimeRow label="Tooling Change" time="28m" percent={40} color="bg-blue-500" />
-              <DowntimeRow label="Material Short" time="15m" percent={20} color="bg-amber-500" />
-              <DowntimeRow label="Operator Break" time="10m" percent={15} color="bg-slate-600" />
-            </div>
-            <button className="w-full mt-12 py-4 rounded-2xl bg-blue-600/5 hover:bg-blue-600/10 border border-blue-500/20 text-blue-400 font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-sm">
-              View Detailed Log
-            </button>
-          </div>
-
         </div>
-      </main>
-      
-      {/* Footer Branding */}
-      <footer className="fixed bottom-6 right-8 text-slate-700 text-[10px] font-black uppercase tracking-[0.4em] z-0">
-        © 2026 ZEWELL SOLUTION
-      </footer>
+
+        {/* Failure Distribution (Right Card) */}
+        <div className="bg-slate-900/30 backdrop-blur-md border border-slate-800/50 rounded-[2.5rem] p-10 shadow-2xl flex flex-col h-full min-h-[550px]">
+          <h3 className="text-lg font-black text-white italic tracking-widest uppercase mb-12 flex items-center gap-3">
+            <span className="w-2 h-6 bg-red-600 rounded-full shadow-[0_0_15px_rgba(220,38,38,0.5)]"></span>
+            Failure Distribution
+          </h3>
+          
+          <div className="space-y-10 flex-grow px-2">
+            <DowntimeRow label="Mechanical Failure" time="42m" percent={60} color="bg-red-500" />
+            <DowntimeRow label="Tooling / Setup" time="28m" percent={40} color="bg-blue-500" />
+            <DowntimeRow label="Material Supply" time="15m" percent={20} color="bg-amber-500" />
+            <DowntimeRow label="Operator Idling" time="10m" percent={15} color="bg-slate-600" />
+          </div>
+
+          <div className="mt-12 pt-8 border-t border-slate-800/40">
+            <Link 
+              href="/dashboard/timeline" 
+              className="group w-full py-4.5 rounded-[1.25rem] bg-slate-800/40 hover:bg-blue-600 border border-slate-700 hover:border-blue-400 transition-all duration-300 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-xl flex items-center justify-center gap-3 active:scale-[0.97]"
+            >
+              <span>Timeline Analytics</span>
+              <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </Link>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
 
-// --- Sub-components (Clean Code) ---
-
+// --- Internal Components (เหมือนเดิม) ---
 function MetricCard({ title, value, unit, color, glow }: any) {
-  const colorMap: any = {
-    blue: "text-blue-500 bg-blue-500",
-    indigo: "text-indigo-500 bg-indigo-500",
-    cyan: "text-cyan-500 bg-cyan-500",
-    emerald: "text-emerald-500 bg-emerald-500",
+  const colors: any = {
+    blue: "text-blue-500 bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.2)]",
+    indigo: "text-indigo-500 bg-indigo-600 shadow-[0_0_15px_rgba(79,70,229,0.2)]",
+    cyan: "text-cyan-500 bg-cyan-600 shadow-[0_0_15px_rgba(6,182,212,0.2)]",
+    emerald: "text-emerald-500 bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.2)]",
   };
 
   return (
-    <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/50 p-6 rounded-3xl relative overflow-hidden group transition-all duration-300 hover:border-blue-500/40 hover:translate-y-[-2px]">
-      {glow && <div className="absolute -right-6 -top-6 w-32 h-32 bg-blue-600/5 blur-3xl rounded-full group-hover:bg-blue-600/15 transition-all" />}
-      
-      <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{title}</div>
-      <div className="flex items-baseline gap-1">
-        <span className="text-4xl font-black text-white tracking-tighter">{value}</span>
-        <span className={`text-lg font-bold ${colorMap[color].split(' ')[0]}`}>{unit}</span>
+    <div className="bg-slate-900/40 border border-slate-800/50 p-7 rounded-[2rem] relative overflow-hidden group hover:border-blue-500/40 transition-all duration-500 hover:bg-slate-900/60">
+      {glow && <div className="absolute -right-6 -top-6 w-32 h-32 bg-blue-600/10 blur-3xl rounded-full" />}
+      <div className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+        <span className={`w-1.5 h-1.5 rounded-full ${colors[color].split(' ')[1]}`}></span>
+        {title}
       </div>
-      
-      <div className="mt-5 flex items-center gap-2">
-        <div className="h-1 flex-1 bg-slate-800/50 rounded-full overflow-hidden">
-          <div 
-            className={`h-full transition-all duration-1000 ease-out ${colorMap[color].split(' ')[1]}`} 
-            style={{ width: `${value}%` }} 
-          />
-        </div>
+      <div className="flex items-baseline gap-2 mb-8">
+        <span className="text-6xl font-black text-white tracking-tighter italic leading-none">{value}</span>
+        <span className={`text-xs font-black uppercase ${colors[color].split(' ')[0]}`}>{unit}</span>
+      </div>
+      <div className="h-[3px] w-full bg-slate-800/80 rounded-full overflow-hidden shadow-inner p-[0.5px]">
+        <div className={`h-full transition-all duration-1000 ease-out ${colors[color].split(' ')[1]}`} style={{ width: `${value}%` }} />
       </div>
     </div>
-  );
-}
-
-function NavIcon({ icon, active }: any) {
-  return (
-    <button className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-300 group ${active ? 'bg-blue-600/10 text-blue-500 shadow-[inset_0_0_15px_rgba(37,99,235,0.1)]' : 'text-slate-600 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-      <span className="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform">
-        {icon}
-      </span>
-    </button>
   );
 }
 
 function DowntimeRow({ label, time, percent, color }: any) {
   return (
-    <div className="group cursor-default">
-      <div className="flex justify-between text-xs mb-3">
-        <span className="text-slate-400 font-bold tracking-tight group-hover:text-slate-200 transition-colors">{label}</span>
-        <span className="text-white font-black">{time}</span>
+    <div className="group">
+      <div className="flex justify-between items-end mb-4">
+        <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] group-hover:text-slate-200 transition-colors">{label}</span>
+        <span className="text-sm font-mono font-bold text-white italic tracking-widest">{time}</span>
       </div>
-      <div className="h-1.5 w-full bg-slate-800/50 rounded-full overflow-hidden">
-        <div 
-          className={`h-full ${color} rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_8px_rgba(0,0,0,0.5)]`} 
-          style={{ width: `${percent}%` }} 
-        />
+      <div className="h-2.5 w-full bg-slate-800/50 rounded-full overflow-hidden p-[1px] border border-slate-800/30 shadow-inner">
+        <div className={`h-full ${color} rounded-full transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(0,0,0,0.6)]`} style={{ width: `${percent}%` }} />
       </div>
     </div>
   );
